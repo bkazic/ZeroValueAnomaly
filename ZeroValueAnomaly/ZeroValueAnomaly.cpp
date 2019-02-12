@@ -19,22 +19,29 @@ int main()
     PJsonVal DataJson = Misc::JsonFileReader("json.txt");
     TFltVV DataMat = Misc::JsonArr2TFltVV(DataJson);
     Misc::PrintMat(DataMat);
-    TFltVVV Model = Misc::Model(DataMat);
-    Misc::Print3DMat(Model);
+    TFltVVV ModelMat = Misc::Model(DataMat);
+    Misc::Print3DMat(ModelMat);
 
     // Test reading input data
     //DataJson = Misc::JsonFileReader("json2.txt");
     //DataMat = Misc::JsonArr2TFltVV(DataJson);
     //Misc::PrintMat(DataMat);
-    //Model = Misc::Model(DataMat);
-    //Misc::Print3DMat(Model);
+    //ModelMat = Misc::Model(DataMat);
+    //Misc::Print3DMat(ModelMat);
 
     //// Test reading input data
     DataJson = Misc::JsonFileReader("dummy.csv");
     DataMat = Misc::JsonArr2TFltVV(DataJson);
     //Misc::PrintMat(DataMat);
-    Model = Misc::Model(DataMat, false);
-    Misc::Print3DMat(Model);
+    ModelMat = Misc::Model(DataMat, false);
+    Misc::Print3DMat(ModelMat);
+
+    // Testing model clas
+    Model AnomalyModel(5.);
+    ModelMat = AnomalyModel.Fit(DataMat, false);
+
+    Misc::Print3DMat(ModelMat);
+    Misc::PrintMat(AnomalyModel.CountsAll);
 
 	return 0;
 }
