@@ -1,5 +1,6 @@
 #include "base.h"
 #include "misc.cpp"
+using namespace AnomalyDetection;
 
 int main()
 {
@@ -37,11 +38,25 @@ int main()
     Misc::Print3DMat(ModelMat);
 
     // Testing model clas
-    Model AnomalyModel(5.);
+    Model AnomalyModel(5.); //TODO: why doesent it work without input parameter
     ModelMat = AnomalyModel.Fit(DataMat, false);
 
     Misc::Print3DMat(ModelMat);
     Misc::PrintMat(AnomalyModel.CountsAll);
+
+    // Alert thresholds
+    TThresholdV Thresholds;
+    Thresholds.Add(TThreshold(0.1, 1, "High"));
+    Thresholds.Add(TThreshold(0.2, 2, "Medium"));
+    Thresholds.Add(TThreshold(0.3, 3, "Low"));
+
+    TAlertV Alerts = AnomalyModel.Detect(DataMat, Thresholds);
+
+    // TODO check this alerts vector if it has meaningfull alerts
+    printf("\nNumber of alerts: %i", Alerts.Len());
+    for (int i = 0; i < Alerts.Len(); i++) {
+        printf("\nTs: %.0f, Severity: %i", (double)Alerts[i].Timestamp, Alerts[i].AlertSeverity);
+    }
 
 	return 0;
 }
