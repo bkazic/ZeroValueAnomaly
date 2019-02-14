@@ -1,5 +1,5 @@
 #include "base.h"
-#include "misc.cpp"
+#include "misc.h"
 #include "anomaly_model.h"
 using namespace AnomalyDetection;
 
@@ -9,25 +9,25 @@ int main()
     TFltVV TestMat = TFltVV(3, 2);
 
     // Tests
-    Misc::MatInfo(TestMat);
-    Misc::PrintMat(TestMat);
-    Misc::RndMat(TestMat);
-    Misc::PrintMat(TestMat);
-    Misc::LineReader("test.txt");
-    Misc::Timestamps();
+    TMisc::MatInfo(TestMat);
+    TMisc::PrintMat(TestMat);
+    TMisc::RndMat(TestMat);
+    TMisc::PrintMat(TestMat);
+    TMisc::LineReader("test.txt");
+    TMisc::Timestamps();
 
     //// Test reading input data
-    PJsonVal DataJson = Misc::JsonFileReader("dummy.csv");
-    TFltVV DataMat = Misc::JsonArr2TFltVV(DataJson);
+    PJsonVal DataJson = TMisc::JsonFileReader("dummy.csv");
+    TFltVV DataMat = TMisc::JsonArr2TFltVV(DataJson);
 
     // Testing model clas
     TModel AnomalyModel(5); //TODO: why doesent it work without input parameter
     TFltVVV ModelMat = AnomalyModel.Fit(DataMat, false);
 
     // Debugging
-    Misc::Print3DMat(AnomalyModel.GetCounts());
-    Misc::PrintMat(AnomalyModel.GetCountsAll());
-    Misc::Print3DMat(ModelMat);
+    TMisc::Print3DMat(AnomalyModel.GetCounts());
+    TMisc::PrintMat(AnomalyModel.GetCountsAll());
+    TMisc::Print3DMat(ModelMat);
 
     // Alert thresholds
     TThresholdV Thresholds;
