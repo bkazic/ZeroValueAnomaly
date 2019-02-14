@@ -40,18 +40,18 @@ typedef TVec<TThreshold> TThresholdV;
 // Model
 class TModel {
 private:
-    TInt Lags = 5;
-    TFlt ObservedValue = 0.;
+    TFlt ObservedValue = 0.; //< Observed value which we are modeling
+    TInt Lags = 5; //< Number of sequential values to observe (model)
 
     const TInt TimestampIdx = 0; //< First should be timestamp
     const TInt ValueIdx = 1; //< Second should be value
 
-    const TInt Days = 7;
-    const TInt Hours = 24;
+    const TInt Days = 7; //< Defines first dimension
+    const TInt Hours = 24; //< Defines second dimension
 
-    TFltVV CountsAll;
-    TFltVVV Counts;
-    TFltVVV Probs;
+    TFltVV CountsAll; //< All seen instances (used for normalization)
+    TFltVVV Counts; //< Instances that meets the condition (Val == ObservedVal)
+    TFltVVV Probs; //< Probabilities (normalized Counts matrix)
 
     /// Initialize matrices
     void Init();
@@ -67,7 +67,7 @@ public:
 
     /// Construct the probability matrix from the provided data (Data)
     TFltVVV Fit(const TFltVV& Data, const bool& Verbose = true);
-    /// Detect alerts from the dataset (Data), using provided thresholds (Thresholds)
+    /// Detect alerts from the dataset (Data), using provided thresholds
     void Detect(const TFltVV& Data, const TThresholdV& PThresholds,
         TAlertV& Alerts) const;
     /// Get number of Lags of the model
