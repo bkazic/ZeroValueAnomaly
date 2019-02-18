@@ -39,16 +39,6 @@ int main()
     TAlertV Alerts;
     AnomalyModel.Detect(DataMat, ThresholdV, Alerts);
     printf("\nNumber of alerts: %i", Alerts.Len());
-    ThresholdV.Sort();
-
-    // TODO: This works because the comparator < was overriden
-    // TODO: How would I construct comparator?
-    //ThresholdV.SortCmp()
-
-    // Test thr vals
-    for (int i = 0; i < ThresholdV.Len(); i++) {
-        printf("\nThr: %f", ThresholdV[i].Value.Val);
-    }
 
     return 0;
 }
