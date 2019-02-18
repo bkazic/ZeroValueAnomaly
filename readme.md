@@ -11,7 +11,7 @@
 
 - Add Additional Include Directories
 	- `Options -> Configureation Properties -> C/C++ -> Additional Include Directories`
-	- Add required qminer directories (etc. `glib/base, glib?mine, third_party/sole`)
+	- Add required qminer directories (etc. `glib/base, glib/mine, third_party/sole`)
 	- You can use relative paths (e.g `$(SolutionDir)..\qminer\src\glib\base`)
 
 - Setup Linker 

@@ -5,11 +5,13 @@
 
 namespace AnomalyDetection {
 
+// TODO: Think about changing this co class and having Getters
+
 ///////////////////////////////
 // Thresholds object
 // (used by Model.Detect())
 struct TThreshold {
-    TFlt Val;
+    TFlt Value;
     TInt Severity;
     TStr Label;
 
@@ -17,6 +19,11 @@ struct TThreshold {
     TThreshold(const double& Value, const int& SeverityLevel);
     TThreshold(const double& Value, const int& SeverityLevel,
         const TStr& AlertLabel);
+
+    /// Override comparator for sorting
+    bool operator<(const TThreshold& Threshold) const {
+        return Value < Threshold.Value;
+    }
 };
 
 ///////////////////////////////
@@ -68,8 +75,8 @@ public:
     /// Construct the probability matrix from the provided data (Data)
     TFltVVV Fit(const TFltVV& Data, const bool& Verbose = true);
     /// Detect alerts from the dataset (Data), using provided thresholds
-    void Detect(const TFltVV& Data, const TThresholdV& PThresholds,
-        TAlertV& Alerts) const;
+    void Detect(const TFltVV& Data, TThresholdV PThresholds,
+        TAlertV& PAlertV) const;
     /// Get number of Lags of the model
     int GetLags();
     /// Get which value is the model focusing on (calculating prob matrix)

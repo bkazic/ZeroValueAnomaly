@@ -30,15 +30,25 @@ int main()
     TMisc::Print3DMat(ModelMat);
 
     // Alert thresholds
-    TThresholdV Thresholds;
-    Thresholds.Add(TThreshold(0.1, 1, "High"));
-    Thresholds.Add(TThreshold(0.2, 2, "Medium"));
-    Thresholds.Add(TThreshold(0.3, 3, "Low"));
+    TThresholdV ThresholdV;
+    ThresholdV.Add(TThreshold(0.2, 1, "High"));
+    ThresholdV.Add(TThreshold(0.1, 2, "Medium"));
+    ThresholdV.Add(TThreshold(0.3, 3, "Low"));
 
     // Detect Alerts
     TAlertV Alerts;
-    AnomalyModel.Detect(DataMat, Thresholds, Alerts);
+    AnomalyModel.Detect(DataMat, ThresholdV, Alerts);
     printf("\nNumber of alerts: %i", Alerts.Len());
+    ThresholdV.Sort();
+
+    // TODO: This works because the comparator < was overriden
+    // TODO: How would I construct comparator?
+    //ThresholdV.SortCmp()
+
+    // Test thr vals
+    for (int i = 0; i < ThresholdV.Len(); i++) {
+        printf("\nThr: %f", ThresholdV[i].Value.Val);
+    }
 
     return 0;
 }

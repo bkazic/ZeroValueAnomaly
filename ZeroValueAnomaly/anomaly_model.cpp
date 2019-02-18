@@ -7,10 +7,10 @@ namespace AnomalyDetection {
 TThreshold::TThreshold() {}
 
 TThreshold::TThreshold(const double& Value, const int& SeverityLevel) :
-    Val(Value), Severity(SeverityLevel) { }
+    Value(Value), Severity(SeverityLevel) { }
 
 TThreshold::TThreshold(const double& Value, const int& SeverityLevel,
-    const TStr& AlertLabel): Val(Value), Severity(SeverityLevel),
+    const TStr& AlertLabel): Value(Value), Severity(SeverityLevel),
     Label(AlertLabel) { }
 
 ///////////////////////////////
@@ -42,7 +42,6 @@ void TModel::Init() {
 }
 
 void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
-    // TODO: You could test if matrices are of equal shape (CountsAll and Counts)
     const TInt XDim = Mat.GetXDim();
     const TInt YDim = Mat.GetYDim();
     const TInt ZDim = Mat.GetZDim();
@@ -57,8 +56,11 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
 }
 
 int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
+    // In case CurrIdx < Lags
+    const int Hist = (CurrIdx < Lags) ? (CurrIdx + 1) : (Lags.Val);
+
     int SeqCnt = -1;
-    for (int LagN = 0; LagN < Lags; LagN++) {
+    for (int LagN = 0; LagN < Hist; LagN++) {
         if (Data(CurrIdx - LagN, ValueIdx) == ObservedValue) {
             SeqCnt = LagN;
         } else {
@@ -71,7 +73,7 @@ int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
 
 TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
     // TODO: Remember last timestamp and ensure that new data timestamp is larger
-    // TODO: Enable accepting TFltV Data, if only one record is sent in
+    // TODO: Enable accepting TFltV Data, also if only one record is sent in
 
     const int XDim = Data.GetXDim();
     for (int RowN = 0; RowN < XDim; RowN++) {
@@ -119,12 +121,14 @@ TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
     return Probs;
 }
 
-void TModel::Detect(const TFltVV& Data, const TThresholdV& PThresholds,
-    TAlertV& Alerts) const {
-    // TODO: Thresholds should be in increasing order, sort them! You will have to create a copy.
+void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
+    TAlertV& PAlertV) const {
     // TODO: Check if model was fitted yet. If not, you can use Fit here.
 
-    const int ThrLen = PThresholds.Len();
+    // Thresholds should be sorted in increasing order
+    ThresholdV.Sort();
+
+    const int ThrLen = ThresholdV.Len();
 
     for (int RowN = 0; RowN < Data.GetXDim(); RowN++) {
 
@@ -145,18 +149,18 @@ void TModel::Detect(const TFltVV& Data, const TThresholdV& PThresholds,
 
             // Check all the thresholds for alert
             for (int ThrN = 0; ThrN < ThrLen; ThrN++) {
-                const TThreshold& Threshold = PThresholds[ThrN];
+                const TThreshold& Threshold = ThresholdV[ThrN];
 
-                if (P < Threshold.Val) {
+                if (P < Threshold.Value) {
 
                     // Push alert object to some vector
-                    Alerts.Add(TAlert(Epoch, Threshold.Severity, Threshold));
+                    PAlertV.Add(TAlert(Epoch, Threshold.Severity, Threshold));
 
-                    // TODO: Debu print out. Delte this later.
+                    // TODO: Debug print out. Delte this later.
                     printf("\n[Ts: %.0f, Severity: %i] Detected %s "
                         "severity alert! Lag: %i (%.2f < %.2f)",
                         (double)Epoch, Threshold.Severity.Val,
-                        Threshold.Label.CStr(), Lag, P, Threshold.Val.Val);
+                        Threshold.Label.CStr(), Lag, P, Threshold.Value.Val);
 
                     break;
                 }
