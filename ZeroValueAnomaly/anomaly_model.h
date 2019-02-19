@@ -47,6 +47,9 @@ typedef TVec<TThreshold> TThresholdV;
 // Model
 class TModel {
 private:
+    bool Verbose = false; //< Verbose or not
+    PNotify Notify = TStdNotify::New(); //< Info logger
+
     TFlt ObservedValue = 0.; //< Observed value which we are modeling
     TInt Lags = 5; //< Number of sequential values to observe (model)
 
@@ -70,13 +73,19 @@ private:
 
 public:
     TModel();
-    TModel(const int& LagsNum);
+    TModel(const int& _Lags);
+    TModel(const bool& _Verbose);
+    TModel(const int& _Lags, const bool& _Verbose);
 
     /// Construct the probability matrix from the provided data (Data)
-    TFltVVV Fit(const TFltVV& Data, const bool& Verbose = true);
+    TFltVVV Fit(const TFltVV& Data);
     /// Detect alerts from the dataset (Data), using provided thresholds
     void Detect(const TFltVV& Data, TThresholdV PThresholds,
         TAlertV& PAlertV) const;
+    /// Set verbose
+    void SetVerbose(const bool& _Verbose);
+    /// Get verbose
+    bool GetVerbose();
     /// Get number of Lags of the model
     int GetLags();
     /// Get which value is the model focusing on (calculating prob matrix)

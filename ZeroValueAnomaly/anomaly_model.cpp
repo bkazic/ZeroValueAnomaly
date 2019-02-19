@@ -6,23 +6,23 @@ namespace AnomalyDetection {
 // Thresholds object
 TThreshold::TThreshold() {}
 
-TThreshold::TThreshold(const double& Value, const int& SeverityLevel) :
-    Value(Value), Severity(SeverityLevel) { }
+TThreshold::TThreshold(const double& Value, const int& SeverityLevel)
+        : Value(Value), Severity(SeverityLevel) { }
 
 TThreshold::TThreshold(const double& Value, const int& SeverityLevel,
-    const TStr& AlertLabel): Value(Value), Severity(SeverityLevel),
-    Label(AlertLabel) { }
+                       const TStr& AlertLabel)
+        : Value(Value), Severity(SeverityLevel), Label(AlertLabel) { }
 
 ///////////////////////////////
 // Alert object
 TAlert::TAlert() {}
 
-TAlert::TAlert(const uint64& Ts, const int& Severity) : Timestamp(Ts),
-    AlertSeverity(Severity) { }
+TAlert::TAlert(const uint64& Ts, const int& Severity)
+        : Timestamp(Ts), AlertSeverity(Severity) { }
 
 TAlert::TAlert(const uint64& Ts, const int& Severity,
-    const TThreshold& AlertInfo) : Timestamp(Ts), AlertSeverity(Severity),
-    Info(AlertInfo) { }
+               const TThreshold& AlertInfo)
+        : Timestamp(Ts), AlertSeverity(Severity), Info(AlertInfo) { }
 
 ///////////////////////////////
 // Model
@@ -30,8 +30,16 @@ TModel::TModel() {
     Init();
 };
 
-TModel::TModel(const int& LagsNum) {
-    Lags = LagsNum;
+TModel::TModel(const int& _Lags) : Lags(_Lags) {
+    Init();
+}
+
+TModel::TModel(const bool& _Verbose) : Verbose(_Verbose) {
+    Init();
+}
+
+TModel::TModel(const int& _Lags, const bool& _Verbose)
+        : Lags(_Lags), Verbose(_Verbose) {
     Init();
 }
 
@@ -71,9 +79,10 @@ int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
 }
 
 
-TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
+TFltVVV TModel::Fit(const TFltVV& Data) {
     // TODO: Remember last timestamp and ensure that new data timestamp is larger
     // TODO: Enable accepting TFltV Data, also if only one record is sent in
+    PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
     const int XDim = Data.GetXDim();
     for (int RowN = 0; RowN < XDim; RowN++) {
@@ -83,12 +92,6 @@ TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
             TTm::GetWinMSecsFromUnixMSecs(Epoch));
         const int Hour = Tm.GetHour();
         const int Day = Tm.GetDaysSinceMonday();
-
-        // TODO: Debugging, delete this later
-        if (Verbose) {
-            printf("\n%i [%s]: (%.0f, %.2f)", RowN, Tm.GetStr().CStr(),
-                Data(RowN, TimestampIdx).Val, Data(RowN, ValueIdx).Val);
-        }
 
         // Update normalization matrix
         CountsAll(Hour, Day)++;
@@ -101,11 +104,10 @@ TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
             // If observed value (usually zero)
             if (Data(RowN - LagN, ValueIdx) == ObservedValue) {
 
-                // TODO: Debugging, delete this later
-                if (Verbose) {
-                    printf("ZERO VAL ==> [Day: %i, Hour: %i, Lag: %i] = %.0f",
-                        Day, Hour, LagN, Counts(Day, Hour, LagN).Val);
-                }
+                // Debug logger
+                LogNotify->OnStatusFmt("Observed Value ==> "
+                    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
+                    Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
 
                 // Increase count
                 Counts(Hour, Day, LagN)++;
@@ -123,7 +125,7 @@ TFltVVV TModel::Fit(const TFltVV& Data, const bool& Verbose) {
 
 void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
     TAlertV& PAlertV) const {
-    // TODO: Check if model was fitted yet. If not, you can use Fit here.
+    PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
     // Thresholds should be sorted in increasing order
     ThresholdV.Sort();
@@ -156,9 +158,9 @@ void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
                     // Push alert object to some vector
                     PAlertV.Add(TAlert(Epoch, Threshold.Severity, Threshold));
 
-                    // TODO: Debug print out. Delte this later.
-                    printf("\n[Ts: %.0f, Severity: %i] Detected %s "
-                        "severity alert! Lag: %i (%.2f < %.2f)",
+                    // Debug logger
+                    LogNotify->OnStatusFmt("[Ts: %.0f, Severity: %i] "
+                        "Detected %s severity alert! Lag: %i (%.2f < %.2f)",
                         (double)Epoch, Threshold.Severity.Val,
                         Threshold.Label.CStr(), Lag, P, Threshold.Value.Val);
 
@@ -169,6 +171,14 @@ void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
         }
 
     }
+}
+
+void TModel::SetVerbose(const bool& _Verbose) {
+    Verbose = _Verbose;
+}
+
+bool TModel::GetVerbose() {
+    return Verbose;
 }
 
 int TModel::GetLags() {

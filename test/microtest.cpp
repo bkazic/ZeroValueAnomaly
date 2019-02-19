@@ -15,8 +15,8 @@ TEST(Test) {
 
     // Alert thresholds
     TThresholdV ThresholdV;
-    ThresholdV.Add(TThreshold(0.2, 1, "High"));
-    ThresholdV.Add(TThreshold(0.1, 2, "Medium"));
+    ThresholdV.Add(TThreshold(0.2, 2, "Medium"));
+    ThresholdV.Add(TThreshold(0.1, 1, "High"));
     ThresholdV.Add(TThreshold(0.3, 3, "Low"));
 
     // Test if thresholds can be sorted
