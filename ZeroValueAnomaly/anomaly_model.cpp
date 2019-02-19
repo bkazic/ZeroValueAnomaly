@@ -64,6 +64,7 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
 }
 
 int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
+    // TODO: This should be rewritten in a way that it has its own circular buffer (of the same size as Lags)
     // In case CurrIdx < Lags
     const int Hist = (CurrIdx < Lags) ? (CurrIdx + 1) : (Lags.Val);
 
@@ -79,13 +80,14 @@ int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
 }
 
 
-TFltVVV TModel::Fit(const TFltVV& Data) {
+void TModel::Fit(const TFltVV& Data) {
     // TODO: Remember last timestamp and ensure that new data timestamp is larger
-    // TODO: Enable accepting TFltV Data, also if only one record is sent in
+
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
-    const int XDim = Data.GetXDim();
-    for (int RowN = 0; RowN < XDim; RowN++) {
+    const int Rows = Data.GetXDim();
+
+    for (int RowN = 0; RowN < Rows; RowN++) {
 
         const uint64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
         const TTm Tm = TTm::GetTmFromMSecs(
@@ -104,10 +106,10 @@ TFltVVV TModel::Fit(const TFltVV& Data) {
             // If observed value (usually zero)
             if (Data(RowN - LagN, ValueIdx) == ObservedValue) {
 
-                // Debug logger
-                LogNotify->OnStatusFmt("Observed Value ==> "
-                    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
-                    Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
+                //// Debug logger
+                //LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
+                //    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
+                //    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
 
                 // Increase count
                 Counts(Hour, Day, LagN)++;
@@ -120,23 +122,27 @@ TFltVVV TModel::Fit(const TFltVV& Data) {
     // Normalize (compute probabilities from counts)
     Normalize(Counts, CountsAll, Probs);
 
-    return Probs;
+    Probs;
 }
 
-void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
+void TModel::Fit(const TFltV& Record) {
+    Fit(TFltVV (Record));
+}
+
+void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
     TAlertV& PAlertV) const {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
+
+    const int ThrLen = ThresholdV.Len();
+    const int Rows = Data.GetXDim();
 
     // Thresholds should be sorted in increasing order
     ThresholdV.Sort();
 
-    const int ThrLen = ThresholdV.Len();
-
-    for (int RowN = 0; RowN < Data.GetXDim(); RowN++) {
+    for (int RowN = 0; RowN < Rows; RowN++) {
 
         if (Data(RowN, ValueIdx) == ObservedValue) {
 
-            // TODO: maybe this could be wraped in a function (extract hour and days)
             const uint64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
             const TTm Tm = TTm::GetTmFromMSecs(
                 TTm::GetWinMSecsFromUnixMSecs(Epoch));
@@ -171,6 +177,27 @@ void TModel::Detect(const TFltVV& Data, TThresholdV ThresholdV,
         }
 
     }
+}
+
+void TModel::Predict(const TFltV& Record, TThresholdV ThresholdV,
+    TAlertV& PAlertV) const {
+    Predict(TFltVV(Record), ThresholdV, PAlertV);
+}
+
+void TModel::FitPredict(const TFltVV& Data, TThresholdV ThresholdV,
+    TAlertV& PAlertV) {
+    Predict(Data, ThresholdV, PAlertV);
+    Fit(Data);
+}
+
+void TModel::FitPredict(const TFltV& Record, TThresholdV ThresholdV,
+    TAlertV& PAlertV) {
+    Predict(Record, ThresholdV, PAlertV);
+    Fit(Record);
+}
+
+void TModel::Clear() {
+    Init();
 }
 
 void TModel::SetVerbose(const bool& _Verbose) {

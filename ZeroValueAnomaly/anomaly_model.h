@@ -78,10 +78,20 @@ public:
     TModel(const int& _Lags, const bool& _Verbose);
 
     /// Construct the probability matrix from the provided data (Data)
-    TFltVVV Fit(const TFltVV& Data);
+    void Fit(const TFltVV& Data);
+    void Fit(const TFltV& Record);
     /// Detect alerts from the dataset (Data), using provided thresholds
-    void Detect(const TFltVV& Data, TThresholdV PThresholds,
+    void Predict(const TFltVV& Data, TThresholdV PThresholds,
         TAlertV& PAlertV) const;
+    void Predict(const TFltV& Record, TThresholdV PThresholds,
+        TAlertV& PAlertV) const;
+    /// First predict and then update the model
+    void FitPredict(const TFltVV& Data, TThresholdV PThresholds,
+        TAlertV& PAlertV);
+    void FitPredict(const TFltV& Record, TThresholdV PThresholds,
+        TAlertV& PAlertV);
+    /// Clears (reinitializes) models
+    void Clear();
     /// Set verbose
     void SetVerbose(const bool& _Verbose);
     /// Get verbose

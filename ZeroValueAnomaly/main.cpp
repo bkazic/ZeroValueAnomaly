@@ -21,9 +21,10 @@ int main()
     TFltVV DataMat = TMisc::JsonArr2TFltVV(DataJson);
 
     // Testing model clas
-    TModel AnomalyModel(5, true); //TODO: why doesent it work without input parameter
+    TModel AnomalyModel(5, true);
     //AnomalyModel.SetVerbose(false);
-    TFltVVV ModelMat = AnomalyModel.Fit(DataMat);
+    //TFltVVV ModelMat = AnomalyModel.Fit(DataMat);
+    AnomalyModel.Fit(DataMat);
 
     // Debugging
     //TMisc::Print3DMat(AnomalyModel.GetCounts());
@@ -38,8 +39,16 @@ int main()
 
     // Detect Alerts
     TAlertV Alerts;
-    AnomalyModel.Detect(DataMat, ThresholdV, Alerts);
+    AnomalyModel.Predict(DataMat, ThresholdV, Alerts);
     printf("\nNumber of alerts: %i", Alerts.Len());
+
+    // Test detecting alert based on one record
+    printf("\nTesting only one record:\n");
+    TFltV Record(2);
+    Record[0] = 0; // Timestamp
+    Record[1] = 5; // Value
+
+    AnomalyModel.Predict(Record, ThresholdV, Alerts);
 
     //Env = TEnv(0, NULL, TNotify::StdNotify);
 

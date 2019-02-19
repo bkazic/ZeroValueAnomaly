@@ -11,7 +11,7 @@ TEST(Test) {
     TModel AnomalyModel(5); //TODO: why doesent it work without input parameter
 
     // Test model fit
-    TFltVVV ModelMat = AnomalyModel.Fit(TestMat);
+    AnomalyModel.Fit(TestMat);
 
     // Alert thresholds
     TThresholdV ThresholdV;
@@ -26,7 +26,7 @@ TEST(Test) {
     }
 
     TAlertV Alerts;
-    AnomalyModel.Detect(TestMat, ThresholdV, Alerts);
+    AnomalyModel.Predict(TestMat, ThresholdV, Alerts);
 
     ASSERT(true);
 }
