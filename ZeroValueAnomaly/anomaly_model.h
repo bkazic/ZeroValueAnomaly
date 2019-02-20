@@ -63,13 +63,29 @@ private:
     TFltVVV Counts; //< Instances that meets the condition (Val == ObservedVal)
     TFltVVV Probs; //< Probabilities (normalized Counts matrix)
 
+    TUInt64 LastTimestamp = 0.; //< Last seen timestamp when fitting
+    TFlt LastValue = NULL; //< Last seen value when predicting
+    TInt SeqValCount = 0.; //< Number of ObservedVales in a row
+
     /// Initialize matrices
     void Init();
     /// Normalize input 3D matrix (Mat), layer by layer (over ZDim)
     /// using normalization matrix (Norm)
     void Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res);
-    /// Get number of ObservedValues (usually zero) in a row
+    /// Get number of ObservedValues in a row
     int NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const;
+    /// Tracks number of sequenced values
+    class SeqValues {
+        TFlt LastValue;
+        TInt Count;
+
+        SeqValues();
+        SeqValues(const double& LastVal, const int& Cnt);
+
+        void Update(const double& Value);
+        int GetCount();
+        double GetLastValue();
+    };
 
 public:
     TModel();
@@ -82,9 +98,9 @@ public:
     void Fit(const TFltV& Record);
     /// Detect alerts from the dataset (Data), using provided thresholds
     void Predict(const TFltVV& Data, TThresholdV PThresholds,
-        TAlertV& PAlertV) const;
+        TAlertV& PAlertV);
     void Predict(const TFltV& Record, TThresholdV PThresholds,
-        TAlertV& PAlertV) const;
+        TAlertV& PAlertV);
     /// First predict and then update the model
     void FitPredict(const TFltVV& Data, TThresholdV PThresholds,
         TAlertV& PAlertV);

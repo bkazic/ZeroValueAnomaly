@@ -43,10 +43,33 @@ TModel::TModel(const int& _Lags, const bool& _Verbose)
     Init();
 }
 
+TModel::SeqValues::SeqValues() { }
+
+TModel::SeqValues::SeqValues(const double& LastVal, const int& Cnt)
+        : LastValue(LastVal), Count(Cnt) { }
+
+void TModel::SeqValues::Update(const double& Value) {
+    if (Value == LastValue) {
+        Count++;
+    } else {
+        Count = 0;
+    }
+    LastValue = Value;
+}
+
+int TModel::SeqValues::GetCount() {
+    return Count;
+}
+
+double TModel::SeqValues::GetLastValue() {
+    return LastValue;
+}
+
 void TModel::Init() {
     Counts = TFltVVV(Hours, Days, Lags);
     CountsAll = TFltVV(Hours, Days);
     Probs = TFltVVV(Hours, Days, Lags);
+    // Init SeqValues;
 }
 
 void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
@@ -89,11 +112,16 @@ void TModel::Fit(const TFltVV& Data) {
 
     for (int RowN = 0; RowN < Rows; RowN++) {
 
-        const uint64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
+        // Extract timestamp features
+        const TUInt64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
         const TTm Tm = TTm::GetTmFromMSecs(
             TTm::GetWinMSecsFromUnixMSecs(Epoch));
         const int Hour = Tm.GetHour();
         const int Day = Tm.GetDaysSinceMonday();
+
+        // Check last timestamp
+        if (Epoch <= LastTimestamp) {/*TODO: Throw exception*/};
+        LastTimestamp = Epoch;
 
         // Update normalization matrix
         CountsAll(Hour, Day)++;
@@ -130,7 +158,7 @@ void TModel::Fit(const TFltV& Record) {
 }
 
 void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
-    TAlertV& PAlertV) const {
+    TAlertV& PAlertV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
     const int ThrLen = ThresholdV.Len();
@@ -139,18 +167,37 @@ void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
     // Thresholds should be sorted in increasing order
     ThresholdV.Sort();
 
+    // Iterate over dataset
     for (int RowN = 0; RowN < Rows; RowN++) {
 
+        // TODO: This can go into a function
+        // Update number of sequenced values or reset count
+        if (LastValue == Data(RowN, ValueIdx)) {
+            if (SeqValCount < (Lags - 1)) { SeqValCount++; }
+        } else {
+            SeqValCount = 0;
+        }
+        //(LastValue == Data(RowN, ValueIdx)) ? SeqValCount++ : SeqValCount = 0;
+        //SeqValCount = (SeqValCount < Lags) ? SeqValCount : (Lags.Val - 1);
+        LastValue = Data(RowN, ValueIdx);
+        //SeqValues.Update(Data(RowN, ValueIdx));
+
+        // If observed value
         if (Data(RowN, ValueIdx) == ObservedValue) {
 
-            const uint64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
+            // Extract timestamp features
+            const TUInt64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
             const TTm Tm = TTm::GetTmFromMSecs(
                 TTm::GetWinMSecsFromUnixMSecs(Epoch));
             const int Hour = Tm.GetHour();
             const int Day = Tm.GetDaysSinceMonday();
 
             // Get number of ObservedValues in a row
-            const int Lag = NumOfSeqValues(Data, RowN);
+            //printf("\nCase1: %i", NumOfSeqValues(Data, RowN));
+            //printf("\nCase2: %i", SeqValCount);
+            //const int Lag = NumOfSeqValues(Data, RowN);
+            const int Lag = SeqValCount;
+            //const int Lag = SeqValues.GetCount();
 
             // Get probability for a specific bucket
             const double P = Probs(Hour, Day, Lag);
@@ -180,7 +227,7 @@ void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
 }
 
 void TModel::Predict(const TFltV& Record, TThresholdV ThresholdV,
-    TAlertV& PAlertV) const {
+    TAlertV& PAlertV) {
     Predict(TFltVV(Record), ThresholdV, PAlertV);
 }
 
@@ -230,10 +277,12 @@ TFltVVV TModel::GetProbabilities() {
 
 void TModel::Save() {
     // TODO
+    // Everything from Init()
 }
 
 void TModel::Load() {
     // TODO
+    // Maybe create new Init method with all the instances
 }
 
 } // namespace AnomalyDetection
