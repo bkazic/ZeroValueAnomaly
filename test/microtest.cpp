@@ -25,7 +25,7 @@ TEST(Test) {
     // Test if thresholds can be sorted
     ThresholdV.Sort();
     for (int i = 1; i < ThresholdV.Len(); i++) {
-        ASSERT_TRUE(ThresholdV[i].Value > ThresholdV[i-1].Value);
+        ASSERT_TRUE(ThresholdV[i].GetValue() > ThresholdV[i-1].GetValue());
     }
 
     TAlertV Alerts;
