@@ -3,6 +3,13 @@
 namespace AnomalyDetection {
 
 ///////////////////////////////
+// Record object
+TRecord::TRecord() {}
+
+TRecord::TRecord(const uint64& _Timestamp, const double& _Value)
+        : Timestamp(_Timestamp), Value(_Value) {}
+
+///////////////////////////////
 // Thresholds object
 TThreshold::TThreshold() {}
 
@@ -43,28 +50,6 @@ TModel::TModel(const int& _Lags, const bool& _Verbose)
     Init();
 }
 
-TModel::SeqValues::SeqValues() { }
-
-TModel::SeqValues::SeqValues(const double& LastVal, const int& Cnt)
-        : LastValue(LastVal), Count(Cnt) { }
-
-void TModel::SeqValues::Update(const double& Value) {
-    if (Value == LastValue) {
-        Count++;
-    } else {
-        Count = 0;
-    }
-    LastValue = Value;
-}
-
-int TModel::SeqValues::GetCount() {
-    return Count;
-}
-
-double TModel::SeqValues::GetLastValue() {
-    return LastValue;
-}
-
 void TModel::Init() {
     Counts = TFltVVV(Hours, Days, Lags);
     CountsAll = TFltVV(Hours, Days);
@@ -86,14 +71,14 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
     }
 }
 
-int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
-    // TODO: This should be rewritten in a way that it has its own circular buffer (of the same size as Lags)
+int TModel::NumOfSeqValues(const TRecordV& PRecordV, const int& CurrIdx) const {
+    // TODO: Deprecated (not in use)
     // In case CurrIdx < Lags
     const int Hist = (CurrIdx < Lags) ? (CurrIdx + 1) : (Lags.Val);
 
     int SeqCnt = -1;
     for (int LagN = 0; LagN < Hist; LagN++) {
-        if (Data(CurrIdx - LagN, ValueIdx) == ObservedValue) {
+        if (PRecordV[CurrIdx - LagN].Value == ObservedValue) {
             SeqCnt = LagN;
         } else {
             break;
@@ -102,42 +87,57 @@ int TModel::NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const {
     return SeqCnt;
 }
 
+void TModel::UpdateSeqValCount(const double& Value) {
+    // Update number of sequenced values or reset count
+    if (LastValue == Value) {
+        if (SeqValCount < (Lags - 1)) { // Max value is Lag
+            SeqValCount++;
+        }
+    } else {
+        SeqValCount = 0;
+    }
+    LastValue = Value;
+}
 
-void TModel::Fit(const TFltVV& Data) {
-    // TODO: Remember last timestamp and ensure that new data timestamp is larger
-
+void TModel::Fit(const TRecordV& PRecordV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
-    const int Rows = Data.GetXDim();
+    const int Rows = PRecordV.Len();
 
     for (int RowN = 0; RowN < Rows; RowN++) {
+        const TFlt CurrValue = PRecordV[RowN].Value;
+        const TUInt64 CurrTimestamp = PRecordV[RowN].Timestamp;
+
+        // Check and update last timestamp
+        if (CurrTimestamp <= LastTimestamp) {
+            // TODO: Just throw some notification
+            // TODO: Delete this WarnNotify later (just for debugging)
+            WarnNotify("Warning: Last timestamp is larger is same as current!");
+            break; //TODO: Test if this work as you whish
+        }
+        LastTimestamp = CurrTimestamp;
 
         // Extract timestamp features
-        const TUInt64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
         const TTm Tm = TTm::GetTmFromMSecs(
-            TTm::GetWinMSecsFromUnixMSecs(Epoch));
+            TTm::GetWinMSecsFromUnixMSecs(CurrTimestamp));
         const int Hour = Tm.GetHour();
         const int Day = Tm.GetDaysSinceMonday();
-
-        // Check last timestamp
-        if (Epoch <= LastTimestamp) {/*TODO: Throw exception*/};
-        LastTimestamp = Epoch;
 
         // Update normalization matrix
         CountsAll(Hour, Day)++;
 
         for (int LagN = 0; LagN < Lags; LagN++) {
 
-            // check if valid data index (positive)
+            // check if data index (positive) is valid
             if (RowN - LagN < 0) { break; }
 
             // If observed value (usually zero)
-            if (Data(RowN - LagN, ValueIdx) == ObservedValue) {
+            if (PRecordV[RowN - LagN].Value == ObservedValue) {
 
-                //// Debug logger
-                //LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
-                //    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
-                //    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
+                // Debug logger
+                LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
+                    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
+                    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
 
                 // Increase count
                 Counts(Hour, Day, LagN)++;
@@ -153,51 +153,44 @@ void TModel::Fit(const TFltVV& Data) {
     Probs;
 }
 
-void TModel::Fit(const TFltV& Record) {
-    Fit(TFltVV (Record));
+void TModel::Fit(const TRecord& PRecord) {
+    TRecordV RecordV(1);
+    RecordV[0] = PRecord;
+    Fit(RecordV);
+    //TRecordV test(PRecord, 1); //TODO: Why doesent this work???
+    //Fit(TRecordV(PRecord, 1)); //TODO: Why doesent this work???
 }
 
-void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
+void TModel::Predict(const TRecordV& PRecordV, TThresholdV ThresholdV,
     TAlertV& PAlertV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
     const int ThrLen = ThresholdV.Len();
-    const int Rows = Data.GetXDim();
+    const int Rows = PRecordV.Len();
 
     // Thresholds should be sorted in increasing order
     ThresholdV.Sort();
 
     // Iterate over dataset
     for (int RowN = 0; RowN < Rows; RowN++) {
+        const TFlt CurrValue = PRecordV[RowN].Value;
+        const TUInt64 CurrTimestamp = PRecordV[RowN].Timestamp;
 
-        // TODO: This can go into a function
         // Update number of sequenced values or reset count
-        if (LastValue == Data(RowN, ValueIdx)) {
-            if (SeqValCount < (Lags - 1)) { SeqValCount++; }
-        } else {
-            SeqValCount = 0;
-        }
-        //(LastValue == Data(RowN, ValueIdx)) ? SeqValCount++ : SeqValCount = 0;
-        //SeqValCount = (SeqValCount < Lags) ? SeqValCount : (Lags.Val - 1);
-        LastValue = Data(RowN, ValueIdx);
-        //SeqValues.Update(Data(RowN, ValueIdx));
+        UpdateSeqValCount(CurrValue);
 
         // If observed value
-        if (Data(RowN, ValueIdx) == ObservedValue) {
+        if (CurrValue == ObservedValue) {
 
             // Extract timestamp features
-            const TUInt64 Epoch = uint64((int64)Data(RowN, TimestampIdx));
             const TTm Tm = TTm::GetTmFromMSecs(
-                TTm::GetWinMSecsFromUnixMSecs(Epoch));
+                TTm::GetWinMSecsFromUnixMSecs(CurrTimestamp));
             const int Hour = Tm.GetHour();
             const int Day = Tm.GetDaysSinceMonday();
 
             // Get number of ObservedValues in a row
-            //printf("\nCase1: %i", NumOfSeqValues(Data, RowN));
-            //printf("\nCase2: %i", SeqValCount);
             //const int Lag = NumOfSeqValues(Data, RowN);
             const int Lag = SeqValCount;
-            //const int Lag = SeqValues.GetCount();
 
             // Get probability for a specific bucket
             const double P = Probs(Hour, Day, Lag);
@@ -209,12 +202,12 @@ void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
                 if (P < Threshold.Value) {
 
                     // Push alert object to some vector
-                    PAlertV.Add(TAlert(Epoch, Threshold.Severity, Threshold));
+                    PAlertV.Add(TAlert(CurrTimestamp, Threshold.Severity, Threshold));
 
                     // Debug logger
                     LogNotify->OnStatusFmt("[Ts: %.0f, Severity: %i] "
                         "Detected %s severity alert! Lag: %i (%.2f < %.2f)",
-                        (double)Epoch, Threshold.Severity.Val,
+                        (double)CurrTimestamp, Threshold.Severity.Val,
                         Threshold.Label.CStr(), Lag, P, Threshold.Value.Val);
 
                     break;
@@ -226,21 +219,25 @@ void TModel::Predict(const TFltVV& Data, TThresholdV ThresholdV,
     }
 }
 
-void TModel::Predict(const TFltV& Record, TThresholdV ThresholdV,
+void TModel::Predict(const TRecord& PRecord, TThresholdV ThresholdV,
     TAlertV& PAlertV) {
-    Predict(TFltVV(Record), ThresholdV, PAlertV);
+    TRecordV RecordV(1);
+    RecordV[0] = PRecord;
+    Predict(RecordV, ThresholdV, PAlertV);
+    //TRecordV test(PRecord, 1); //TODO: Why doesent this work???
+    //Predict(TRecordV(PRecord, 1), ThresholdV, PAlertV); //TODO: Why doesent this work???
 }
 
-void TModel::FitPredict(const TFltVV& Data, TThresholdV ThresholdV,
+void TModel::FitPredict(const TRecordV& PRecordV, TThresholdV ThresholdV,
     TAlertV& PAlertV) {
-    Predict(Data, ThresholdV, PAlertV);
-    Fit(Data);
+    Predict(PRecordV, ThresholdV, PAlertV);
+    Fit(PRecordV);
 }
 
-void TModel::FitPredict(const TFltV& Record, TThresholdV ThresholdV,
+void TModel::FitPredict(const TRecord& PRecord, TThresholdV ThresholdV,
     TAlertV& PAlertV) {
-    Predict(Record, ThresholdV, PAlertV);
-    Fit(Record);
+    Predict(PRecord, ThresholdV, PAlertV);
+    Fit(PRecord);
 }
 
 void TModel::Clear() {

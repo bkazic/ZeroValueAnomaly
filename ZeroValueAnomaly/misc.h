@@ -2,6 +2,7 @@
 #define MISC_H
 
 #include "base.h"
+#include "anomaly_model.h"
 
 namespace AnomalyDetection {
 
@@ -32,6 +33,8 @@ public:
     static PJsonVal JsonFileReader(const TStr& FName);
     // Convert from PJson Array to Matrix (TFltVV)
     static TFltVV JsonArr2TFltVV(const PJsonVal& DataJson);
+    // Convert from PJson Array to Vector of Records
+    static TRecordV JsonArr2TRecordV(const PJsonVal& DataJson);
     // Test reading timestamps
     static void Timestamps();
 };

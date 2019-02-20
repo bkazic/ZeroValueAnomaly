@@ -8,6 +8,17 @@ namespace AnomalyDetection {
 // TODO: Think about changing this co class and having Getters
 
 ///////////////////////////////
+// Record object
+// (used for wrapping timestamp and value into a record)
+struct TRecord {
+    TUInt64 Timestamp;
+    TFlt Value;
+
+    TRecord();
+    TRecord(const uint64& Timestamp, const double& Value);
+};
+
+///////////////////////////////
 // Thresholds object
 // (used by Model.Detect())
 struct TThreshold {
@@ -42,6 +53,7 @@ struct TAlert {
 
 typedef TVec<TAlert> TAlertV;
 typedef TVec<TThreshold> TThresholdV;
+typedef TVec<TRecord> TRecordV;
 
 ///////////////////////////////
 // Model
@@ -53,9 +65,6 @@ private:
     TFlt ObservedValue = 0.; //< Observed value which we are modeling
     TInt Lags = 5; //< Number of sequential values to observe (model)
 
-    const TInt TimestampIdx = 0; //< First should be timestamp
-    const TInt ValueIdx = 1; //< Second should be value
-
     const TInt Days = 7; //< Defines first dimension
     const TInt Hours = 24; //< Defines second dimension
 
@@ -63,29 +72,19 @@ private:
     TFltVVV Counts; //< Instances that meets the condition (Val == ObservedVal)
     TFltVVV Probs; //< Probabilities (normalized Counts matrix)
 
-    TUInt64 LastTimestamp = 0.; //< Last seen timestamp when fitting
+    TUInt64 LastTimestamp = 0; //< Last seen timestamp when fitting
     TFlt LastValue = NULL; //< Last seen value when predicting
-    TInt SeqValCount = 0.; //< Number of ObservedVales in a row
+    TInt SeqValCount = 0; //< Number of ObservedVales in a row
 
     /// Initialize matrices
     void Init();
     /// Normalize input 3D matrix (Mat), layer by layer (over ZDim)
     /// using normalization matrix (Norm)
     void Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res);
-    /// Get number of ObservedValues in a row
-    int NumOfSeqValues(const TFltVV& Data, const int& CurrIdx) const;
-    /// Tracks number of sequenced values
-    class SeqValues {
-        TFlt LastValue;
-        TInt Count;
-
-        SeqValues();
-        SeqValues(const double& LastVal, const int& Cnt);
-
-        void Update(const double& Value);
-        int GetCount();
-        double GetLastValue();
-    };
+    /// [DEPRECATED] Get number of ObservedValues in a row
+    int NumOfSeqValues(const TRecordV& PRecordV, const int& CurrIdx) const;
+    /// Update sequenced values count
+    void UpdateSeqValCount(const double& Value);
 
 public:
     TModel();
@@ -94,17 +93,17 @@ public:
     TModel(const int& _Lags, const bool& _Verbose);
 
     /// Construct the probability matrix from the provided data (Data)
-    void Fit(const TFltVV& Data);
-    void Fit(const TFltV& Record);
+    void Fit(const TRecordV& PRecordV);
+    void Fit(const TRecord& PRecord);
     /// Detect alerts from the dataset (Data), using provided thresholds
-    void Predict(const TFltVV& Data, TThresholdV PThresholds,
+    void Predict(const TRecordV& PRecordV, TThresholdV PThresholds,
         TAlertV& PAlertV);
-    void Predict(const TFltV& Record, TThresholdV PThresholds,
+    void Predict(const TRecord& PRecord, TThresholdV PThresholds,
         TAlertV& PAlertV);
     /// First predict and then update the model
-    void FitPredict(const TFltVV& Data, TThresholdV PThresholds,
+    void FitPredict(const TRecordV& PRecordV, TThresholdV PThresholds,
         TAlertV& PAlertV);
-    void FitPredict(const TFltV& Record, TThresholdV PThresholds,
+    void FitPredict(const TRecord& PRecord, TThresholdV PThresholds,
         TAlertV& PAlertV);
     /// Clears (reinitializes) models
     void Clear();

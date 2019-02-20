@@ -90,7 +90,6 @@ PJsonVal TMisc::JsonFileReader(const TStr& FName) {
 }
 
 TFltVV TMisc::JsonArr2TFltVV(const PJsonVal& DataJson) {
-    // Create matrix
     const int XDim = DataJson->GetArrVals();
     const int YDim = DataJson->GetArrVal(0)->GetArrVals(); // Should allways be 2 (ts, val)
     TFltVV Mat = TFltVV(XDim, YDim);
@@ -103,6 +102,20 @@ TFltVV TMisc::JsonArr2TFltVV(const PJsonVal& DataJson) {
     }
 
     return Mat;
+}
+
+TRecordV TMisc::JsonArr2TRecordV(const PJsonVal& DataJson) {
+    const int XDim = DataJson->GetArrVals();
+    TRecordV RecordV(XDim);
+
+    // Populate vector
+    for (int X = 0; X < XDim; X++) {
+        const double Ts = DataJson->GetArrVal(X)->GetArrVal(0)->GetNum();
+        const double Val = DataJson->GetArrVal(X)->GetArrVal(1)->GetNum();
+        RecordV[X] = TRecord(uint64((int64)Ts), Val);
+    }
+
+    return RecordV;
 }
 
 // Test reading timestamps

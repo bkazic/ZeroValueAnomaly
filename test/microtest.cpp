@@ -4,14 +4,17 @@
 using namespace AnomalyDetection;
 
 TEST(Test) {
-    // Init zero values test matrix
-    TFltVV TestMat = TFltVV(3, 2);
+    // Init zero values test dataset
+    TRecordV DataVec(3);
+    DataVec[0] = TRecord(1, 0);
+    DataVec[1] = TRecord(2, 0);
+    DataVec[2] = TRecord(3, 0);
 
     // Testing model clas
-    TModel AnomalyModel(5); //TODO: why doesent it work without input parameter
+    TModel AnomalyModel(5);
 
     // Test model fit
-    AnomalyModel.Fit(TestMat);
+    AnomalyModel.Fit(DataVec);
 
     // Alert thresholds
     TThresholdV ThresholdV;
@@ -26,7 +29,7 @@ TEST(Test) {
     }
 
     TAlertV Alerts;
-    AnomalyModel.Predict(TestMat, ThresholdV, Alerts);
+    AnomalyModel.Predict(DataVec, ThresholdV, Alerts);
 
     ASSERT(true);
 }

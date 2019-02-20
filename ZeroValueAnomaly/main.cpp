@@ -19,12 +19,13 @@ int main()
     //// Test reading input data
     PJsonVal DataJson = TMisc::JsonFileReader("dummy.csv");
     TFltVV DataMat = TMisc::JsonArr2TFltVV(DataJson);
+    TRecordV DataVec = TMisc::JsonArr2TRecordV(DataJson);
 
     // Testing model clas
     TModel AnomalyModel(5, true);
     //AnomalyModel.SetVerbose(false);
     //TFltVVV ModelMat = AnomalyModel.Fit(DataMat);
-    AnomalyModel.Fit(DataMat);
+    AnomalyModel.Fit(DataVec);
 
     // Debugging
     //TMisc::Print3DMat(AnomalyModel.GetCounts());
@@ -39,16 +40,13 @@ int main()
 
     // Detect Alerts
     TAlertV Alerts;
-    AnomalyModel.Predict(DataMat, ThresholdV, Alerts);
+    AnomalyModel.Predict(DataVec, ThresholdV, Alerts);
     printf("\nNumber of alerts: %i", Alerts.Len());
 
     // Test detecting alert based on one record
     printf("\nTesting only one record:\n");
-    TFltV Record(2);
-    Record[0] = 0; // Timestamp
-    Record[1] = 5; // Value
-
-    AnomalyModel.Predict(Record, ThresholdV, Alerts);
+    AnomalyModel.Fit(TRecord(0, 0));
+    AnomalyModel.Predict(TRecord(0, 0), ThresholdV, Alerts);
 
     //Env = TEnv(0, NULL, TNotify::StdNotify);
 
