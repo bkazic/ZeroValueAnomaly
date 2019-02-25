@@ -1,6 +1,9 @@
-#include "base.h"
-#include "misc.h"
+﻿#include "misc.h"
+#include <base.h>
+#include <mine.h>
+//#include "qminer.h"
 #include "anomaly_model.h"
+
 using namespace AnomalyDetection;
 
 int main()
@@ -13,11 +16,11 @@ int main()
     TMisc::PrintMat(TestMat);
     TMisc::RndMat(TestMat);
     TMisc::PrintMat(TestMat);
-    TMisc::LineReader("test.txt");
+    TMisc::LineReader("../ZeroValueAnomaly/test.txt");
     TMisc::Timestamps();
 
     //// Test reading input data
-    PJsonVal DataJson = TMisc::JsonFileReader("dummy.csv");
+    PJsonVal DataJson = TMisc::JsonFileReader("../ZeroValueAnomaly/dummy.csv");
     TFltVV DataMat = TMisc::JsonArr2TFltVV(DataJson);
     TRecordV DataVec = TMisc::JsonArr2TRecordV(DataJson);
 
@@ -44,9 +47,9 @@ int main()
     printf("\nNumber of alerts: %i", Alerts.Len());
 
     // Test detecting alert based on one record
-    printf("\nTesting only one record:\n");
-    AnomalyModel.Fit(TRecord(0, 0));
-    AnomalyModel.Predict(TRecord(0, 0), ThresholdV, Alerts);
+    //printf("\nTesting only one record:\n");
+    //AnomalyModel.Fit(TRecord(0, 0));
+    //AnomalyModel.Predict(TRecord(0, 0), ThresholdV, Alerts);
 
     //Env = TEnv(0, NULL, TNotify::StdNotify);
 
@@ -55,6 +58,35 @@ int main()
     Notify->OnNotifyFmt(TNotifyType::ntInfo, "\nOk this is it %i %i", 2, 3);
 
     Notify->OnStatusFmt("\nTest 2  %i %i", 2, 3);
+
+    // Testing Resampler
+
+    //TODO: Create resampler paramVal
+    PJsonVal ParamVal = TJsonVal::NewObj();
+    ParamVal->AddToObj("interval", 0);
+    ParamVal->AddToObj("aggType", "sum");
+    ParamVal->AddToObj("roundStart", "h");
+    ParamVal->AddToObj("defaultValue", 0);
+
+    TSignalProc::TAggrResampler Resampler(ParamVal);
+
+
+    const uint64 NewTmMSecs = 0;
+    const double NewVal = 0.;
+
+    // Set current time
+    Resampler.SetCurrentTm(NewTmMSecs);
+    // Add record to the buffer
+    Resampler.AddPoint(NewVal, NewTmMSecs);
+    Resampler.PrintState();
+
+    // Resample
+    double ResampledValue = 0;
+    uint64 ResampledTm = 0;
+    bool FoundEmptyP = false;
+    Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP);
+
+    Resampler.PrintState();
 
     return 0;
 }

@@ -1,6 +1,11 @@
 # How to create a project
 
-## From Sctrach
+## Setting up existing solutin
+- First time, we have to build with node-gyp `npm install --build-from-source`
+- After the first build you can open the Visual Studio solution `\build\binding.sln` and build from IDE.
+- See QMiner homepage for detailed instructions (https://qminer.github.io/setup/)
+
+## From Sctrach (Not recomended!)
 - Create new Windows Console Application project
 
 - Remove pch files from Header and Source Files (e.g. `pch.h` and `pch.cpp`)
@@ -11,7 +16,8 @@
 
 - Add Additional Include Directories
 	- `Options -> Configureation Properties -> C/C++ -> Additional Include Directories`
-	- Add required qminer directories (etc. `glib/base, glib/mine, third_party/sole`)
+	- Add required glib directories (etc. `glib/base, glib/mine, third_party/sole`)
+	- Add required qminer directories (etc. `src/qminer`)
 	- You can use relative paths (e.g `$(SolutionDir)..\qminer\src\glib\base`)
 
 - Setup Linker 
@@ -22,6 +28,3 @@
 
 - Sync Code Generation with qminer
     - `Options -> Configureationa Properties -> C/C++ -> Code Generation -> Runtime Library -> Multi-threaded Debug (/MTd)`
-
-## Setting up existing solutin
-- TODO

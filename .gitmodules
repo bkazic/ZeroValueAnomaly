@@ -1,0 +1,3 @@
+[submodule "qminer"]
+	path = qminer
+	url = git@github.com:qminer/qminer.git
