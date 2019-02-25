@@ -1,6 +1,6 @@
 # How to create a project
 
-## Setting up existing solutin
+## Building with node-gyp
 - First time, we have to build with node-gyp `npm install --build-from-source`
 - After the first build you can open the Visual Studio solution `\build\binding.sln` and build from IDE.
 - See QMiner homepage for detailed instructions (https://qminer.github.io/setup/)
