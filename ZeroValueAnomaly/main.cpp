@@ -49,9 +49,6 @@ int main()
     //AnomalyModel.Fit(TRecord(0, 0));
     //AnomalyModel.Predict(TRecord(0, 0), ThresholdV, Alerts);
 
-    PNotify Notify = TStdNotify::New();
-    Notify->OnNotifyFmt(TNotifyType::ntInfo, "\nOk this is it %i %i", 2, 3);
-    Notify->OnStatusFmt("\nTest 2  %i %i", 2, 3);
 
     ///////////////////////////
     //// Testing Resampler ////
@@ -71,102 +68,6 @@ int main()
     uint64 ResampledTm = 0;
     bool FoundEmptyP = false;
     bool SkipEmptyP = false;
-
-    // Resampler input values
-    double NewVal = 0.;
-    uint64 NewTmMSecs = 1 * 60 * 60 * 1000;
-
-    // Set current time
-    Resampler.SetCurrentTm(NewTmMSecs);
-    // Add record to the buffer
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-    Resampler.PrintState();
-
-    // Test sending new record
-    NewVal = 1.;
-    NewTmMSecs = 2 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    //Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP);
-    printf("\nResampled Val: %f, ResampledTm: %.0f, EmptyBuffer: %d, Test: %d",
-        ResampledValue, (double)ResampledTm, FoundEmptyP, Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP));
-    Resampler.PrintState();
-
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 3 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    //Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP);
-    printf("\nResampled Val: %f, ResampledTm: %.0f, EmptyBuffer: %d, Test: %d",
-        ResampledValue, (double)ResampledTm, FoundEmptyP, Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP));
-    Resampler.PrintState();
-
-
-    // Test sending new record
-    NewVal = 3.;
-    NewTmMSecs = 7 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    //Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP);
-    printf("\nResampled Val: %f, ResampledTm: %.0f, EmptyBuffer: %d, Test: %d",
-        ResampledValue, (double)ResampledTm, FoundEmptyP, Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP));
-    Resampler.PrintState();
-
-    Resampler.SetCurrentTm(8 * 60 * 60 * 1000);
-
-    // Call resampler until we get to the current timestamp
-    while (Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP)) {
-        Resampler.PrintState();
-        // notify out aggregate that new resampled values are available
-        if (FoundEmptyP && SkipEmptyP) { continue; }
-    }
-
-    // Subsampling test
-    printf("\n\nSubsampling test:\n");
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 9 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 9.1 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 9.2 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 9.3 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-    // Test sending new record
-    NewVal = 2.;
-    NewTmMSecs = 10 * 60 * 60 * 1000;
-    Resampler.SetCurrentTm(NewTmMSecs);
-    Resampler.AddPoint(NewVal, NewTmMSecs);
-
-
-    // Call resampler until we get to the current timestamp
-    while (Resampler.TryResampleOnce(ResampledValue, ResampledTm, FoundEmptyP)) {
-        Resampler.PrintState();
-        // notify out aggregate that new resampled values are available
-        if (FoundEmptyP && SkipEmptyP) { continue; }
-    }
-
 
     // Testing in for loop
     printf("\n\nTesting in loop:\n");
@@ -202,6 +103,7 @@ int main()
     // Testing entire dataset
     printf("\n\nTesting dummy dataset:\n");
 
+    //DataJson = TMisc::JsonFileReader("../ZeroValueAnomaly/data/dummy.json");
     DataJson = TMisc::JsonFileReader("../ZeroValueAnomaly/data/dummy_10min.json");
     DataVec = TMisc::JsonArr2TRecordV(DataJson);
     const int Rows = DataVec.Len();
@@ -230,8 +132,7 @@ int main()
             // notify out aggregate that new resampled values are available
             if (FoundEmptyP && SkipEmptyP) { continue; }
 
-            printf("\nResampled Val: %f, ResampledTm: %.0f\n",
-                ResampledValue, (double)ResampledTm);
+            //printf("\nResampled Val: %f, ResampledTm: %.0f\n", ResampledValue, (double)ResampledTm);
             //Resampler.PrintState();
 
             //// Predict model
@@ -243,9 +144,9 @@ int main()
     }
 
     // Learned models
-    TMisc::Print3DMat(AnomalyModel.GetCounts());
-    TMisc::Print3DMat(AnomalyModel.GetProbabilities());
-    TMisc::PrintMat(AnomalyModel.GetCountsAll());
+    //TMisc::Print3DMat(AnomalyModel.GetCounts());
+    //TMisc::Print3DMat(AnomalyModel.GetProbabilities());
+    //TMisc::PrintMat(AnomalyModel.GetCountsAll());
 
     // Detected alerts
     printf("\nNumber of alerts: %i", AlertV.Len());
