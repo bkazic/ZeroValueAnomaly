@@ -57,10 +57,7 @@ void TModel::Init() {
     Counts = TFltVVV(Hours, Days, Lags);
     CountsAll = TFltVV(Hours, Days);
     Probs = TFltVVV(Hours, Days, Lags);
-    LastTimestamp = 0; // TODO: check if this is needed
-    LastValue = -1.; // TODO: check if this is needed
-    SeqValCount = 0; // TODO: check if this is needed
-    // TODO: do instances of counts
+
     SeqValsFit = TModel::SeqValues(0, Lags - 1);
     SeqValsPredict = TModel::SeqValues(0, Lags - 1);
 }
@@ -79,35 +76,6 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
     }
 }
 
-// TODO: Deprecated (not in use)
-int TModel::NumOfSeqValues(const TRecordV& RecordV, const int& CurrIdx) const {
-    // In case CurrIdx < Lags
-    const int Hist = (CurrIdx < Lags) ? (CurrIdx + 1) : (Lags.Val);
-
-    int SeqCnt = -1;
-    for (int LagN = 0; LagN < Hist; LagN++) {
-        if (RecordV[CurrIdx - LagN].GetValue() == ObservedValue) {
-            SeqCnt = LagN;
-        } else {
-            break;
-        }
-    }
-    return SeqCnt;
-}
-
-// TODO: Deprecated (not in use)
-void TModel::UpdateSeqValCount(const double& Value) {
-    // Update number of sequenced values or reset count
-    if (LastValue == Value) {
-        if (SeqValCount < (Lags - 1)) { // Max value is Lag
-            SeqValCount++;
-        }
-    } else {
-        SeqValCount = 0;
-    }
-    LastValue = Value;
-}
-
 void TModel::Fit(const TRecordV& RecordV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
@@ -123,7 +91,7 @@ void TModel::Fit(const TRecordV& RecordV) {
             // TODO: Just throw some notification
             // TODO: Delete this WarnNotify later (just for debugging)
             WarnNotify("Warning: Last timestamp is larger or same as current!");
-            break; //TODO: Test if this work as you whish
+            break;
         }
         SeqValsFit.Update(Record);
 
@@ -135,9 +103,10 @@ void TModel::Fit(const TRecordV& RecordV) {
         // Update normalization matrix
         CountsAll(Hour, Day)++;
 
-        // TODO: Test if this works
+        // If observed value
         if (CurrValue == ObservedValue()) {
 
+            // Iterate over number of sequenced values
             for (int LagN = 0; LagN <= SeqValsFit.GetCount(); LagN++) {
 
                 // Increase count
@@ -149,26 +118,6 @@ void TModel::Fit(const TRecordV& RecordV) {
                 //    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
             }
         }
-
-        //for (int LagN = 0; LagN < Lags; LagN++) {
-
-        //    // check if data index (positive) is valid // TODO: This is not ok!
-        //    if ((RowN - LagN) < 0) { break; }
-
-        //    // If observed value (usually zero) // TODO: This is not ok!!
-        //    if (RecordV[RowN - LagN].GetValue() == ObservedValue) {
-
-        //        //// Debug logger
-        //        LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
-        //            "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
-        //            ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
-
-        //        // Increase count
-        //        Counts(Hour, Day, LagN)++;
-        //    } else {
-        //        break;
-        //    }
-        //}
     }
 
     // Normalize (compute probabilities from counts)
@@ -196,7 +145,6 @@ void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
         const TUInt64 CurrTimestamp = Record.GetTimestamp();
 
         // Update number of sequenced values or reset count
-        //UpdateSeqValCount(CurrValue); // TODO: delete this
         SeqValsPredict.Update(Record);
 
         // If observed value
@@ -208,8 +156,6 @@ void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
             const int Day = Tm.GetDaysSinceMonday();
 
             // Get number of ObservedValues in a row
-            //const int Lag = NumOfSeqValues(Data, RowN);  // TODO: delete this
-            //const int Lag = SeqValCount;  // TODO: delete this
             const int Lag = SeqValsPredict.GetCount();
 
             // Get probability for a specific bucket

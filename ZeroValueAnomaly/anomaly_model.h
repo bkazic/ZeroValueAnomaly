@@ -85,33 +85,28 @@ private:
     TFltVVV Counts; //< Instances that meets the condition (Val == ObservedVal)
     TFltVVV Probs; //< Probabilities (normalized Counts matrix)
 
-    TUInt64 LastTimestamp;  // TODO: check if this is needed
-    TFlt LastValue;  // TODO: check if this is needed
-    TInt SeqValCount;  // TODO: check if this is needed
-
     /// Initialize matrices
     void Init();
     /// Normalize input 3D matrix (Mat), layer by layer (over ZDim)
     /// using normalization matrix (Norm)
     void Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res);
-    /// [DEPRECATED] Get number of ObservedValues in a row
-    int NumOfSeqValues(const TRecordV& PRecordV, const int& CurrIdx) const;
-    /// Update sequenced values count
-    void UpdateSeqValCount(const double& Value);
 
-    /// Tracks number of sequenced values (observed values in a row)
+    /// Tracks number of sequenced values (same values in a row)
     class SeqValues {
     private:
-        TRecord LastRecord;
-        TInt Count;
-        TInt MaxSize;
+        TRecord LastRecord; //< Last seen record (contains timestamp and value)
+        TInt Count; //< Last count of sequenced values
+        TInt MaxSize;  //< Last seen record (contains timestamp and value)
 
     public:
         SeqValues();
         SeqValues(const int& Cnt, const int& Max);
 
+        /// Updates last seen record and number of sequenced values (Count)
         void Update(const TRecord& Record);
+        /// Get last seen record
         TRecord const GetLastRecord() { return LastRecord; }
+        /// Get last number of sequenced values (Count)
         int const GetCount() { return Count; }
     };
 
