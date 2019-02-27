@@ -85,9 +85,9 @@ private:
     TFltVVV Counts; //< Instances that meets the condition (Val == ObservedVal)
     TFltVVV Probs; //< Probabilities (normalized Counts matrix)
 
-    TUInt64 LastTimestamp; //< Last seen timestamp when fitting
-    TFlt LastValue; //< Last seen value when predicting
-    TInt SeqValCount; //< Number of ObservedVales in a row
+    TUInt64 LastTimestamp;  // TODO: check if this is needed
+    TFlt LastValue;  // TODO: check if this is needed
+    TInt SeqValCount;  // TODO: check if this is needed
 
     /// Initialize matrices
     void Init();
@@ -98,6 +98,25 @@ private:
     int NumOfSeqValues(const TRecordV& PRecordV, const int& CurrIdx) const;
     /// Update sequenced values count
     void UpdateSeqValCount(const double& Value);
+
+    /// Tracks number of sequenced values (observed values in a row)
+    class SeqValues {
+    private:
+        TRecord LastRecord;
+        TInt Count;
+        TInt MaxSize;
+
+    public:
+        SeqValues();
+        SeqValues(const int& Cnt, const int& Max);
+
+        void Update(const TRecord& Record);
+        TRecord const GetLastRecord() { return LastRecord; }
+        int const GetCount() { return Count; }
+    };
+
+    TModel::SeqValues SeqValsFit; // Instance of SeqValues for fit method
+    TModel::SeqValues SeqValsPredict;  // Instance of SeqValues for predict method
 
 public:
     TModel(const int& _Lags = 5, const bool& _Verbose = false);

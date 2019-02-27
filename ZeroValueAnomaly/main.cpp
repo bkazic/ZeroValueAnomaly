@@ -49,12 +49,8 @@ int main()
     //AnomalyModel.Fit(TRecord(0, 0));
     //AnomalyModel.Predict(TRecord(0, 0), ThresholdV, Alerts);
 
-    //Env = TEnv(0, NULL, TNotify::StdNotify);
-
     PNotify Notify = TStdNotify::New();
-
     Notify->OnNotifyFmt(TNotifyType::ntInfo, "\nOk this is it %i %i", 2, 3);
-
     Notify->OnStatusFmt("\nTest 2  %i %i", 2, 3);
 
     ///////////////////////////
@@ -213,6 +209,9 @@ int main()
     // Clear old instance of Anomaly Model
     AnomalyModel.Clear();
 
+    // New Alerts class
+    TAlertV AlertV;
+
     // new instance of resampler
     TSignalProc::TAggrResampler ResamplerNew(ParamVal);
 
@@ -231,15 +230,25 @@ int main()
             // notify out aggregate that new resampled values are available
             if (FoundEmptyP && SkipEmptyP) { continue; }
 
-            printf("\nResampled Val: %f, ResampledTm: %.0f",
+            printf("\nResampled Val: %f, ResampledTm: %.0f\n",
                 ResampledValue, (double)ResampledTm);
             //Resampler.PrintState();
 
+            //// Predict model
+            AnomalyModel.Predict(TRecord(ResampledTm, ResampledValue), ThresholdV, AlertV);
+
             // Fit model
             AnomalyModel.Fit(TRecord(ResampledTm, ResampledValue));
-
         }
     }
+
+    // Learned models
+    TMisc::Print3DMat(AnomalyModel.GetCounts());
+    TMisc::Print3DMat(AnomalyModel.GetProbabilities());
+    TMisc::PrintMat(AnomalyModel.GetCountsAll());
+
+    // Detected alerts
+    printf("\nNumber of alerts: %i", AlertV.Len());
 
     return 0;
 }

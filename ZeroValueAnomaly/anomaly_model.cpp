@@ -29,6 +29,24 @@ TAlert::TAlert(const uint64& Ts, const int& Severity,
         : Timestamp(Ts), AlertSeverity(Severity), Info(AlertInfo) { }
 
 ///////////////////////////////
+// Number of observed vals
+TModel::SeqValues::SeqValues() { }
+
+TModel::SeqValues::SeqValues(const int& Cnt, const int& Max)
+        : Count(Cnt), MaxSize(Max) { }
+
+void TModel::SeqValues::Update(const TRecord& Record) {
+    if (LastRecord.GetValue() == Record.GetValue()) {
+        if (Count < MaxSize ) {
+            Count++;
+        }
+    } else {
+        Count = 0;
+    }
+    LastRecord = Record;
+}
+
+///////////////////////////////
 // Model
 TModel::TModel(const int& _Lags, const bool& _Verbose)
         : Lags(_Lags), Verbose(_Verbose) {
@@ -39,6 +57,12 @@ void TModel::Init() {
     Counts = TFltVVV(Hours, Days, Lags);
     CountsAll = TFltVV(Hours, Days);
     Probs = TFltVVV(Hours, Days, Lags);
+    LastTimestamp = 0; // TODO: check if this is needed
+    LastValue = -1.; // TODO: check if this is needed
+    SeqValCount = 0; // TODO: check if this is needed
+    // TODO: do instances of counts
+    SeqValsFit = TModel::SeqValues(0, Lags - 1);
+    SeqValsPredict = TModel::SeqValues(0, Lags - 1);
 }
 
 void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
@@ -55,8 +79,8 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
     }
 }
 
+// TODO: Deprecated (not in use)
 int TModel::NumOfSeqValues(const TRecordV& RecordV, const int& CurrIdx) const {
-    // TODO: Deprecated (not in use)
     // In case CurrIdx < Lags
     const int Hist = (CurrIdx < Lags) ? (CurrIdx + 1) : (Lags.Val);
 
@@ -71,6 +95,7 @@ int TModel::NumOfSeqValues(const TRecordV& RecordV, const int& CurrIdx) const {
     return SeqCnt;
 }
 
+// TODO: Deprecated (not in use)
 void TModel::UpdateSeqValCount(const double& Value) {
     // Update number of sequenced values or reset count
     if (LastValue == Value) {
@@ -89,17 +114,18 @@ void TModel::Fit(const TRecordV& RecordV) {
     const int Rows = RecordV.Len();
 
     for (int RowN = 0; RowN < Rows; RowN++) {
-        const TFlt CurrValue = RecordV[RowN].GetValue();
-        const TUInt64 CurrTimestamp = RecordV[RowN].GetTimestamp();
+        TRecord Record = RecordV[RowN];
+        const TFlt CurrValue = Record.GetValue();
+        const TUInt64 CurrTimestamp = Record.GetTimestamp();
 
         // Check and update last timestamp
-        if (CurrTimestamp <= LastTimestamp) {
+        if (CurrTimestamp <= SeqValsFit.GetLastRecord().GetTimestamp()) {
             // TODO: Just throw some notification
             // TODO: Delete this WarnNotify later (just for debugging)
-            WarnNotify("Warning: Last timestamp is larger is same as current!");
+            WarnNotify("Warning: Last timestamp is larger or same as current!");
             break; //TODO: Test if this work as you whish
         }
-        LastTimestamp = CurrTimestamp;
+        SeqValsFit.Update(Record);
 
         // Extract timestamp features
         const TTm Tm = TTm::GetTmFromMSecs(TTm::GetWinMSecsFromUnixMSecs(CurrTimestamp));
@@ -109,25 +135,40 @@ void TModel::Fit(const TRecordV& RecordV) {
         // Update normalization matrix
         CountsAll(Hour, Day)++;
 
-        for (int LagN = 0; LagN < Lags; LagN++) {
+        // TODO: Test if this works
+        if (CurrValue == ObservedValue()) {
 
-            // check if data index (positive) is valid
-            if ((RowN - LagN) < 0) { break; }
-
-            // If observed value (usually zero)
-            if (RecordV[RowN - LagN].GetValue() == ObservedValue) {
-
-                //// Debug logger
-                //LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
-                //    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
-                //    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
+            for (int LagN = 0; LagN <= SeqValsFit.GetCount(); LagN++) {
 
                 // Increase count
                 Counts(Hour, Day, LagN)++;
-            } else {
-                break;
+
+                // Debug logger
+                //LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
+                //    "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
+                //    ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
             }
         }
+
+        //for (int LagN = 0; LagN < Lags; LagN++) {
+
+        //    // check if data index (positive) is valid // TODO: This is not ok!
+        //    if ((RowN - LagN) < 0) { break; }
+
+        //    // If observed value (usually zero) // TODO: This is not ok!!
+        //    if (RecordV[RowN - LagN].GetValue() == ObservedValue) {
+
+        //        //// Debug logger
+        //        LogNotify->OnStatusFmt("Observed Value: %.0f ==> "
+        //            "[Day: %i, Hour: %i, Lag: %i], Counts: %.0f",
+        //            ObservedValue, Day, Hour, LagN, Counts(Hour, Day, LagN).Val);
+
+        //        // Increase count
+        //        Counts(Hour, Day, LagN)++;
+        //    } else {
+        //        break;
+        //    }
+        //}
     }
 
     // Normalize (compute probabilities from counts)
@@ -150,11 +191,13 @@ void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
 
     // Iterate over dataset
     for (int RowN = 0; RowN < Rows; RowN++) {
-        const TFlt CurrValue = RecordV[RowN].GetValue();
-        const TUInt64 CurrTimestamp = RecordV[RowN].GetTimestamp();
+        TRecord Record = RecordV[RowN];
+        const TFlt CurrValue = Record.GetValue();
+        const TUInt64 CurrTimestamp = Record.GetTimestamp();
 
         // Update number of sequenced values or reset count
-        UpdateSeqValCount(CurrValue);
+        //UpdateSeqValCount(CurrValue); // TODO: delete this
+        SeqValsPredict.Update(Record);
 
         // If observed value
         if (CurrValue == ObservedValue) {
@@ -165,8 +208,9 @@ void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
             const int Day = Tm.GetDaysSinceMonday();
 
             // Get number of ObservedValues in a row
-            //const int Lag = NumOfSeqValues(Data, RowN);
-            const int Lag = SeqValCount;
+            //const int Lag = NumOfSeqValues(Data, RowN);  // TODO: delete this
+            //const int Lag = SeqValCount;  // TODO: delete this
+            const int Lag = SeqValsPredict.GetCount();
 
             // Get probability for a specific bucket
             const double P = Probs(Hour, Day, Lag);
