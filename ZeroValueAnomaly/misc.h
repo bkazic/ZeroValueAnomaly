@@ -1,7 +1,7 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include "base.h"
+#include <base.h>
 #include "anomaly_model.h"
 
 namespace AnomalyDetection {

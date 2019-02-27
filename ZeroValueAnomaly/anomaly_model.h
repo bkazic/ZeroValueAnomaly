@@ -1,7 +1,7 @@
 #ifndef ANOMALY_MODEL_H
 #define ANOMALY_MODEL_H
 
-#include "base.h"
+#include <base.h>
 
 namespace AnomalyDetection {
 
