@@ -120,7 +120,9 @@
                 'ZeroValueAnomaly/anomaly_model.cpp',
                 'ZeroValueAnomaly/anomaly_model.h',
                 'ZeroValueAnomaly/misc.cpp',
-                'ZeroValueAnomaly/misc.h'
+                'ZeroValueAnomaly/misc.h',
+                'ZeroValueAnomaly/examples.cpp',
+                'ZeroValueAnomaly/examples.h'
             ],
             'include_dirs': [
                 'qminer/src/glib/base',
@@ -140,9 +142,7 @@
                 'ZeroValueAnomaly/anomaly_model.cpp',
                 'ZeroValueAnomaly/anomaly_model.h',
                 'ZeroValueAnomaly/misc.cpp',
-                'ZeroValueAnomaly/misc.h',
-                'ZeroValueAnomaly/examples.cpp',
-                'ZeroValueAnomaly/examples.h'
+                'ZeroValueAnomaly/misc.h'
             ],
             'include_dirs': [
                 'ZeroValueAnomaly',
