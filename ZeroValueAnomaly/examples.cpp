@@ -11,7 +11,7 @@ void TExamples::batchLearningExample() {
     TRecordV DataVec = TMisc::JsonArr2TRecordV(DataJson);
 
     // Testing model clas
-    TModel AnomalyModel(5, true);
+    TZeroValModel AnomalyModel(5, true);
 
     AnomalyModel.Fit(DataVec);
 
@@ -41,7 +41,7 @@ void TExamples::oneByOneLearningExample() {
     TRecordV DataVec = TMisc::JsonArr2TRecordV(DataJson);
 
     // Testing model clas
-    TModel AnomalyModel(5, true);
+    TZeroValModel AnomalyModel(5, true);
 
     // Alert thresholds
     TThresholdV ThresholdV;
@@ -148,7 +148,7 @@ void TExamples::streamingExample() {
     bool SkipEmptyP = false;
 
     // Clear old instance of Anomaly Model
-    TModel AnomalyModel(5, true);
+    TZeroValModel AnomalyModel(5, true);
 
     // New Alerts class
     TAlertV Alerts;

@@ -11,7 +11,7 @@ TEST(Test) {
     DataVec[2] = TRecord(3, 0);
 
     // Testing model clas
-    TModel AnomalyModel(5);
+    TZeroValModel AnomalyModel(5);
 
     // Test model fit
     AnomalyModel.Fit(DataVec);

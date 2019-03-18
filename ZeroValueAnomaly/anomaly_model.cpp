@@ -30,12 +30,12 @@ TAlert::TAlert(const uint64& Ts, const int& Severity,
 
 ///////////////////////////////
 // Number of observed vals
-TModel::SeqValues::SeqValues() { }
+TZeroValModel::SeqValues::SeqValues() { }
 
-TModel::SeqValues::SeqValues(const int& Cnt, const int& Max)
+TZeroValModel::SeqValues::SeqValues(const int& Cnt, const int& Max)
         : Count(Cnt), MaxSize(Max) { }
 
-void TModel::SeqValues::Update(const TRecord& Record) {
+void TZeroValModel::SeqValues::Update(const TRecord& Record) {
     if (LastRecord.GetValue() == Record.GetValue()) {
         if (Count < MaxSize ) {
             Count++;
@@ -48,21 +48,21 @@ void TModel::SeqValues::Update(const TRecord& Record) {
 
 ///////////////////////////////
 // Model
-TModel::TModel(const int& _Lags, const bool& _Verbose)
+TZeroValModel::TZeroValModel(const int& _Lags, const bool& _Verbose)
         : Lags(_Lags), Verbose(_Verbose) {
     Init();
 }
 
-void TModel::Init() {
+void TZeroValModel::Init() {
     Counts = TFltVVV(Hours, Days, Lags);
     CountsAll = TFltVV(Hours, Days);
     Probs = TFltVVV(Hours, Days, Lags);
 
-    SeqValsFit = TModel::SeqValues(0, Lags - 1);
-    SeqValsPredict = TModel::SeqValues(0, Lags - 1);
+    SeqValsFit = TZeroValModel::SeqValues(0, Lags - 1);
+    SeqValsPredict = TZeroValModel::SeqValues(0, Lags - 1);
 }
 
-void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
+void TZeroValModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
     const TInt XDim = Mat.GetXDim();
     const TInt YDim = Mat.GetYDim();
     const TInt ZDim = Mat.GetZDim();
@@ -76,7 +76,7 @@ void TModel::Normalize(const TFltVVV& Mat, const TFltVV& Norm, TFltVVV& Res) {
     }
 }
 
-void TModel::Fit(const TRecordV& RecordV) {
+void TZeroValModel::Fit(const TRecordV& RecordV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
     const int Rows = RecordV.Len();
@@ -124,11 +124,11 @@ void TModel::Fit(const TRecordV& RecordV) {
     Normalize(Counts, CountsAll, Probs);
 }
 
-void TModel::Fit(const TRecord& Record) {
+void TZeroValModel::Fit(const TRecord& Record) {
     Fit(TRecordV::GetV(Record));
 }
 
-void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
+void TZeroValModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
                      TAlertV& AlertV) {
     PNotify LogNotify = Verbose ? Notify : TNotify::NullNotify;
 
@@ -185,33 +185,33 @@ void TModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
     }
 }
 
-void TModel::Predict(const TRecord& Record, TThresholdV ThresholdV,
+void TZeroValModel::Predict(const TRecord& Record, TThresholdV ThresholdV,
                      TAlertV& AlertV) {
     Predict(TRecordV::GetV(Record), ThresholdV, AlertV);
 }
 
-void TModel::FitPredict(const TRecordV& RecordV, TThresholdV ThresholdV,
+void TZeroValModel::FitPredict(const TRecordV& RecordV, TThresholdV ThresholdV,
                         TAlertV& AlertV) {
     Predict(RecordV, ThresholdV, AlertV);
     Fit(RecordV);
 }
 
-void TModel::FitPredict(const TRecord& Record, TThresholdV ThresholdV,
+void TZeroValModel::FitPredict(const TRecord& Record, TThresholdV ThresholdV,
                         TAlertV& AlertV) {
     Predict(Record, ThresholdV, AlertV);
     Fit(Record);
 }
 
-void TModel::Clear() {
+void TZeroValModel::Clear() {
     Init();
 }
 
-void TModel::Save() {
+void TZeroValModel::Save() {
     // TODO
     // Everything from Init()
 }
 
-void TModel::Load() {
+void TZeroValModel::Load() {
     // TODO
     // Maybe create new Init method with all the instances
 }

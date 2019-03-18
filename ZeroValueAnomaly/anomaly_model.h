@@ -70,13 +70,12 @@ typedef TVec<TRecord> TRecordV;
 
 ///////////////////////////////
 // Model
-class TModel {
+class TZeroValModel {
 private:
+    TInt Lags; //< Number of sequential values to observe (model)
     bool Verbose; //< Verbose or not
     PNotify Notify = TStdNotify::New(); //< Info logger
-
     TFlt ObservedValue; //< Observed value which we are modeling
-    TInt Lags; //< Number of sequential values to observe (model)
 
     const TInt Days = 7; //< Defines first dimension
     const TInt Hours = 24; //< Defines second dimension
@@ -110,11 +109,11 @@ private:
         int const GetCount() { return Count; }
     };
 
-    TModel::SeqValues SeqValsFit; // Instance of SeqValues for fit method
-    TModel::SeqValues SeqValsPredict;  // Instance of SeqValues for predict method
+    TZeroValModel::SeqValues SeqValsFit; // Instance of SeqValues for fit method
+    TZeroValModel::SeqValues SeqValsPredict;  // Instance of SeqValues for predict method
 
 public:
-    TModel(const int& _Lags = 5, const bool& _Verbose = false);
+    TZeroValModel(const int& _Lags = 5, const bool& _Verbose = false);
 
     /// Construct the probability matrix from the provided data (Data)
     void Fit(const TRecordV& RecordV);
