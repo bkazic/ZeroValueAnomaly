@@ -4,7 +4,7 @@
 #include "anomaly_model.h"
 #include "examples.h"
 
-using namespace AnomalyDetection;
+using namespace TAnomalyDetection;
 
 int main()
 {

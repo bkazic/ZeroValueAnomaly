@@ -1,6 +1,6 @@
 #include "misc.h"
 
-namespace AnomalyDetection {
+namespace TAnomalyDetection {
 
 void TMisc::MatInfo(TFltVV& Mat) {
     printf("Rows: %i\n", Mat.GetRows());

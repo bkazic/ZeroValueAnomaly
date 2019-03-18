@@ -4,7 +4,7 @@
 #include <base.h>
 #include "anomaly_model.h"
 
-namespace AnomalyDetection {
+namespace TAnomalyDetection {
 
 ///////////////////////////////
 // Misc object
@@ -39,6 +39,6 @@ public:
     static void Timestamps();
 };
 
-} // namespace AnomalyDetection
+} // namespace TAnomalyDetection
 
 #endif

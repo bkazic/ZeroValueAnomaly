@@ -1,6 +1,6 @@
 #include "examples.h"
 
-using namespace AnomalyDetection;
+using namespace TAnomalyDetection;
 
 void TExamples::batchLearningExample() {
     // Testing in for loop

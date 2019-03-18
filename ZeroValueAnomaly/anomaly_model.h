@@ -3,7 +3,7 @@
 
 #include <base.h>
 
-namespace AnomalyDetection {
+namespace TAnomalyDetection {
 
 ///////////////////////////////
 // Record object
@@ -151,6 +151,6 @@ public:
     TFltVVV const GetProbabilities() { return Probs; }
 };
 
-} // namespace AnomalyDetection
+} // namespace TAnomalyDetection
 
 #endif

@@ -1,6 +1,6 @@
 #include "anomaly_model.h"
 
-namespace AnomalyDetection {
+namespace TAnomalyDetection {
 
 ///////////////////////////////
 // Record object
@@ -216,4 +216,4 @@ void TZeroValModel::Load() {
     // Maybe create new Init method with all the instances
 }
 
-} // namespace AnomalyDetection
+} // namespace TAnomalyDetection
