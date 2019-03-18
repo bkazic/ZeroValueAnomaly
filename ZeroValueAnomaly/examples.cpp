@@ -179,10 +179,10 @@ void TExamples::streamingExample() {
             //Resampler.PrintState();
 
             //// Predict model
-            AnomalyModel.Predict(TRecord(ResampledTm, ResampledValue), ThresholdV, Alerts);
+            AnomalyModel.Predict(TTimeValue(ResampledTm, ResampledValue), ThresholdV, Alerts);
 
             // Fit model
-            AnomalyModel.Fit(TRecord(ResampledTm, ResampledValue));
+            AnomalyModel.Fit(TTimeValue(ResampledTm, ResampledValue));
         }
     }
 

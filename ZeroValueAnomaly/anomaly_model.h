@@ -8,14 +8,14 @@ namespace TAnomalyDetection {
 ///////////////////////////////
 // Record object
 // (used for wrapping timestamp and value into a record)
-class TRecord {
+class TTimeValue {
 private:
     TUInt64 Timestamp;
     TFlt Value;
 
 public:
-    TRecord();
-    TRecord(const uint64& Timestamp, const double& Value);
+    TTimeValue();
+    TTimeValue(const uint64& Timestamp, const double& Value);
 
     uint64 GetTimestamp() const { return Timestamp; }
     double GetValue() const { return Value; }
@@ -66,7 +66,7 @@ public:
 
 typedef TVec<TAlert> TAlertV;
 typedef TVec<TThreshold> TThresholdV;
-typedef TVec<TRecord> TRecordV;
+typedef TVec<TTimeValue> TRecordV;
 
 ///////////////////////////////
 // Model
@@ -93,7 +93,7 @@ private:
     /// Tracks number of sequenced values (same values in a row)
     class SeqValues {
     private:
-        TRecord LastRecord; //< Last seen record (contains timestamp and value)
+        TTimeValue LastRecord; //< Last seen record (contains timestamp and value)
         TInt Count; //< Last count of sequenced values
         TInt MaxSize;  //< Last seen record (contains timestamp and value)
 
@@ -102,9 +102,9 @@ private:
         SeqValues(const int& Cnt, const int& Max);
 
         /// Updates last seen record and number of sequenced values (Count)
-        void Update(const TRecord& Record);
+        void Update(const TTimeValue& Record);
         /// Get last seen record
-        TRecord const GetLastRecord() { return LastRecord; }
+        TTimeValue const GetLastRecord() { return LastRecord; }
         /// Get last number of sequenced values (Count)
         int const GetCount() { return Count; }
     };
@@ -117,16 +117,16 @@ public:
 
     /// Construct the probability matrix from the provided data (Data)
     void Fit(const TRecordV& RecordV);
-    void Fit(const TRecord& Record);
+    void Fit(const TTimeValue& Record);
     /// Detect alerts from the dataset (Data), using provided thresholds
     void Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
                  TAlertV& AlertV);
-    void Predict(const TRecord& Record, TThresholdV ThresholdV,
+    void Predict(const TTimeValue& Record, TThresholdV ThresholdV,
                  TAlertV& AlertV);
     /// First predict and then update the model
     void FitPredict(const TRecordV& RecordV, TThresholdV ThresholdV,
                     TAlertV& AlertV);
-    void FitPredict(const TRecord& Record, TThresholdV ThresholdV,
+    void FitPredict(const TTimeValue& Record, TThresholdV ThresholdV,
                     TAlertV& AlertV);
     /// Clears (reinitializes) models
     void Clear();

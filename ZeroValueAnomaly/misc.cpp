@@ -112,7 +112,7 @@ TRecordV TMisc::JsonArr2TRecordV(const PJsonVal& DataJson) {
     for (int X = 0; X < XDim; X++) {
         const double Ts = DataJson->GetArrVal(X)->GetArrVal(0)->GetNum();
         const double Val = DataJson->GetArrVal(X)->GetArrVal(1)->GetNum();
-        RecordV[X] = TRecord(uint64((int64)Ts), Val);
+        RecordV[X] = TTimeValue(uint64((int64)Ts), Val);
     }
 
     return RecordV;

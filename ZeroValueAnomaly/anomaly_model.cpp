@@ -4,9 +4,9 @@ namespace TAnomalyDetection {
 
 ///////////////////////////////
 // Record object
-TRecord::TRecord() {}
+TTimeValue::TTimeValue() {}
 
-TRecord::TRecord(const uint64& _Timestamp, const double& _Value)
+TTimeValue::TTimeValue(const uint64& _Timestamp, const double& _Value)
         : Timestamp(_Timestamp), Value(_Value) {}
 
 ///////////////////////////////
@@ -35,7 +35,7 @@ TZeroValModel::SeqValues::SeqValues() { }
 TZeroValModel::SeqValues::SeqValues(const int& Cnt, const int& Max)
         : Count(Cnt), MaxSize(Max) { }
 
-void TZeroValModel::SeqValues::Update(const TRecord& Record) {
+void TZeroValModel::SeqValues::Update(const TTimeValue& Record) {
     if (LastRecord.GetValue() == Record.GetValue()) {
         if (Count < MaxSize ) {
             Count++;
@@ -82,7 +82,7 @@ void TZeroValModel::Fit(const TRecordV& RecordV) {
     const int Rows = RecordV.Len();
 
     for (int RowN = 0; RowN < Rows; RowN++) {
-        TRecord Record = RecordV[RowN];
+        TTimeValue Record = RecordV[RowN];
         const TFlt CurrValue = Record.GetValue();
         const TUInt64 CurrTimestamp = Record.GetTimestamp();
 
@@ -124,7 +124,7 @@ void TZeroValModel::Fit(const TRecordV& RecordV) {
     Normalize(Counts, CountsAll, Probs);
 }
 
-void TZeroValModel::Fit(const TRecord& Record) {
+void TZeroValModel::Fit(const TTimeValue& Record) {
     Fit(TRecordV::GetV(Record));
 }
 
@@ -140,7 +140,7 @@ void TZeroValModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
 
     // Iterate over dataset
     for (int RowN = 0; RowN < Rows; RowN++) {
-        TRecord Record = RecordV[RowN];
+        TTimeValue Record = RecordV[RowN];
         const TFlt CurrValue = Record.GetValue();
         const TUInt64 CurrTimestamp = Record.GetTimestamp();
 
@@ -185,7 +185,7 @@ void TZeroValModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
     }
 }
 
-void TZeroValModel::Predict(const TRecord& Record, TThresholdV ThresholdV,
+void TZeroValModel::Predict(const TTimeValue& Record, TThresholdV ThresholdV,
                      TAlertV& AlertV) {
     Predict(TRecordV::GetV(Record), ThresholdV, AlertV);
 }
@@ -196,7 +196,7 @@ void TZeroValModel::FitPredict(const TRecordV& RecordV, TThresholdV ThresholdV,
     Fit(RecordV);
 }
 
-void TZeroValModel::FitPredict(const TRecord& Record, TThresholdV ThresholdV,
+void TZeroValModel::FitPredict(const TTimeValue& Record, TThresholdV ThresholdV,
                         TAlertV& AlertV) {
     Predict(Record, ThresholdV, AlertV);
     Fit(Record);
