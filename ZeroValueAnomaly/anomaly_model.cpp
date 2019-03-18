@@ -83,8 +83,8 @@ void TZeroValModel::Fit(const TRecordV& RecordV) {
 
     for (int RowN = 0; RowN < Rows; RowN++) {
         TTimeValue Record = RecordV[RowN];
-        const TFlt CurrValue = Record.GetValue();
-        const TUInt64 CurrTimestamp = Record.GetTimestamp();
+        const double CurrValue = Record.GetValue();
+        const uint64 CurrTimestamp = Record.GetTimestamp();
 
         // Check and update last timestamp
         if (CurrTimestamp <= SeqValsFit.GetLastRecord().GetTimestamp()) {
@@ -141,8 +141,8 @@ void TZeroValModel::Predict(const TRecordV& RecordV, TThresholdV ThresholdV,
     // Iterate over dataset
     for (int RowN = 0; RowN < Rows; RowN++) {
         TTimeValue Record = RecordV[RowN];
-        const TFlt CurrValue = Record.GetValue();
-        const TUInt64 CurrTimestamp = Record.GetTimestamp();
+        const double CurrValue = Record.GetValue();
+        const uint64 CurrTimestamp = Record.GetTimestamp();
 
         // Update number of sequenced values or reset count
         SeqValsPredict.Update(Record);
